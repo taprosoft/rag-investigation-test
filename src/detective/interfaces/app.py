@@ -1,4 +1,4 @@
-"""Gradio web UI: chat and report on the left, live evidence on the right.
+"""Gradio web UI: ask at the top, then the report beside the evidence it rests on.
 
 Clicking a citation scrolls its source passage into view and lights up the exact sentence
 the claim rests on. The wiring is one delegated click handler over ``a.cite`` — no
@@ -27,7 +27,10 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     from gradio.blocks import Blocks
 
 CSS = """
-.evidence-pane { max-height: 70vh; overflow-y: auto; padding-right: .5rem; }
+/* Report and evidence scroll independently and to the same depth, so a citation and its
+   source stay on screen together however long either side runs. */
+.report-pane, .evidence-pane { max-height: 68vh; overflow-y: auto; padding-right: .5rem; }
+.log-pane { margin-bottom: .5rem; }
 .report h3 { margin: 1rem 0 .35rem; font-size: .8rem; text-transform: uppercase;
              letter-spacing: .08em; opacity: .6; }
 .report li { margin-bottom: .45rem; line-height: 1.6; }
@@ -170,24 +173,31 @@ def build_ui(investigator: Investigator, settings: Settings) -> Blocks:
         uri = upload_report(report_markdown(investigation), investigation.question, settings)
         return f"Uploaded to `{uri}`" if uri else "Upload failed."
 
+    # Layout: ask at the top, then the report and the evidence it rests on side by side.
+    # Those two panels are the thing being cross-read — a citation chip on the left points
+    # at a sentence on the right — so anything that separates them costs the user a scroll
+    # on every click. The live progress log sits between, where it is visible while the
+    # search runs and out of the way once the report lands.
     with gr.Blocks(title="Case Archive Investigator") as demo:
         gr.Markdown(INTRO)
+
         with gr.Row():
-            with gr.Column(scale=5):
-                chat = gr.Chatbot(height=320, label="Investigation")
-                with gr.Row():
-                    question_box = gr.Textbox(
-                        placeholder="e.g. How were the stolen funds moved?",
-                        show_label=False,
-                        scale=6,
-                        autofocus=True,
-                    )
-                    ask_button = gr.Button("Ask", variant="primary", scale=1)
+            question_box = gr.Textbox(
+                placeholder="e.g. How were the stolen funds moved?",
+                show_label=False,
+                scale=6,
+                autofocus=True,
+            )
+            ask_button = gr.Button("Ask", variant="primary", scale=1)
+
+        with gr.Row():
+            with gr.Column(scale=3):
                 gr.Examples(
                     examples=[[q] for q in EXAMPLE_QUESTIONS],
                     inputs=[question_box],
                     label="Example questions (the last one the archive cannot answer)",
                 )
+            with gr.Column(scale=2):
                 mode_picker = gr.Radio(
                     choices=[("Multi-step (agentic)", "agentic"), ("Single-step", "single")],
                     value="agentic",
@@ -197,12 +207,21 @@ def build_ui(investigator: Investigator, settings: Settings) -> Blocks:
                         "until the evidence holds up. Single-step does one hybrid search."
                     ),
                 )
-                report_panel = gr.HTML(label="Report")
-            with gr.Column(scale=4):
+
+        chat = gr.Chatbot(height=260, label="Investigation", elem_classes=["log-pane"])
+
+        with gr.Row(equal_height=True):
+            with gr.Column(scale=6):
+                gr.Markdown("### Report")
+                report_panel = gr.HTML(elem_classes=["report-pane"])
+            with gr.Column(scale=5):
                 gr.Markdown("### Evidence")
                 evidence_panel = gr.HTML(value=EMPTY_EVIDENCE, elem_classes=["evidence-pane"])
-                with gr.Accordion("Retrieval trace", open=False):
-                    trace_panel = gr.Markdown()
+
+        with gr.Row():
+            with gr.Column(scale=3), gr.Accordion("Retrieval trace", open=False):
+                trace_panel = gr.Markdown()
+            with gr.Column(scale=2):
                 upload_button = gr.Button(
                     "Archive report to S3", interactive=settings.s3_configured
                 )
