@@ -89,7 +89,7 @@ def _claim_markdown(finding: Finding) -> str:
     text = finding.statement
     for citation in sorted(finding.citations, key=lambda c: c.offset, reverse=True):
         cut = min(citation.offset, len(text))
-        chip = f" [{citation.display}]" + ("" if citation.verified else "⚠")
+        chip = f" [{citation.display}]" + ("" if citation.verified else " (unverified)")
         text = text[:cut] + chip + text[cut:]
     return " ".join(text.split())
 
@@ -201,7 +201,7 @@ def _citation_html(citation: Citation) -> str:
         f"data-anchor='{html.escape(citation.anchor)}' "
         f"data-lines='{html.escape(lines)}' data-label='{html.escape(citation.label)}' "
         f"data-target='{html.escape(target)}' title='{html.escape(title)}'>"
-        f"{html.escape(citation.display)}{'' if citation.verified else ' ⚠'}</a>"
+        f"{html.escape(citation.display)}{'' if citation.verified else ' unverified'}</a>"
     )
 
 

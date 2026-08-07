@@ -164,6 +164,20 @@ class RoundResult:
     gap: str
 
 
+@dataclass(frozen=True, slots=True)
+class Step:
+    """A narration of one thing the pipeline did, in the order it happened.
+
+    Emitted as work proceeds rather than reconstructed afterwards, so a UI can show the
+    investigation unfolding instead of a spinner. ``detail`` holds the supporting lines a
+    reader may want to expand.
+    """
+
+    kind: Literal["plan", "search", "verdict", "synthesis", "done"]
+    headline: str
+    detail: tuple[str, ...] = ()
+
+
 @dataclass(slots=True)
 class Investigation:
     """Everything produced for one detective question."""
@@ -172,6 +186,7 @@ class Investigation:
     mode: str = "agentic"
     rounds: list[RoundResult] = field(default_factory=list)
     evidence: list[Evidence] = field(default_factory=list)
+    steps: list[Step] = field(default_factory=list)
     report: Report | None = None
 
     @property

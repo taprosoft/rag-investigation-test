@@ -82,7 +82,7 @@ class TestRenderPanels:
         )
 
         assert "cite unverified" in report_html
-        assert "⚠" in report_html
+        assert "unverified</a>" in report_html
         assert "cited" not in evidence_html
 
     def test_statement_text_is_escaped(self) -> None:
@@ -148,7 +148,7 @@ class TestMarkdown:
 
         markdown = report_markdown(investigation_with(report, [evidence()]))
 
-        assert "⚠" in markdown
+        assert "(unverified)" in markdown
         assert "Citations: 0%" in markdown
 
     def test_handles_an_investigation_with_no_report(self) -> None:

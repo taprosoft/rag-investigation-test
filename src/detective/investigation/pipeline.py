@@ -15,7 +15,7 @@ that second point is the difference between a report and a plausible-sounding mi
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, cast
@@ -30,6 +30,7 @@ from detective.core.models import (
     Investigation,
     Report,
     ScoredChunk,
+    Step,
 )
 from detective.investigation.citations import format_evidence, parse_claim
 from detective.investigation.prompts import (
@@ -137,18 +138,58 @@ class Investigator:
     # -- investigation -----------------------------------------------------------------
 
     def investigate(self, question: str, mode: Mode = "agentic") -> Investigation:
+        """Run the whole investigation and return the finished result."""
         investigation = Investigation(question=question, mode=mode)
-        if mode == "single":
-            self._single_step(investigation)
-        else:
-            self._agentic(investigation)
-        investigation.report = self._synthesise(investigation)
+        for _ in self.investigate_stream(investigation):
+            pass
         return investigation
 
-    def _single_step(self, investigation: Investigation) -> None:
+    def investigate_stream(self, investigation: Investigation) -> Iterator[Step]:
+        """Run the investigation, yielding each step as it completes.
+
+        The generator mutates ``investigation`` in place, so a caller can render the
+        partially-filled result after every yield: evidence appears as it is admitted
+        rather than all at once at the end. :meth:`investigate` is this method drained.
+        """
+        steps = (
+            self._single_step(investigation)
+            if investigation.mode == "single"
+            else self._agentic(investigation)
+        )
+        for step in steps:
+            investigation.steps.append(step)
+            yield step
+
+        pending = Step(
+            kind="synthesis",
+            headline=f"Writing the report from {len(investigation.evidence)} passage(s)",
+            detail=("Each claim must cite a specific line of a supplied passage.",),
+        )
+        investigation.steps.append(pending)
+        yield pending
+
+        investigation.report = self._synthesise(investigation)
+        grounding = investigation.report.grounding_rate
+        done = Step(
+            kind="done",
+            headline="Report complete",
+            detail=(
+                f"{len(investigation.report.claims)} claim(s), "
+                f"{grounding:.0%} resolving to a specific source line.",
+            ),
+        )
+        investigation.steps.append(done)
+        yield done
+
+    def _single_step(self, investigation: Investigation) -> Iterator[Step]:
         from detective.core.models import RoundResult
 
         question = investigation.question
+        yield Step(
+            kind="plan",
+            headline="Single-step retrieval on the question as asked",
+            detail=(f"Query: {question}",),
+        )
         reranked = self.rerank(question, self.hybrid_search(question, self._settings.candidates))
         above = [s for s in reranked if s.score >= self._settings.rerank_threshold]
         keep = {s.chunk.chunk_id for s in self._shortlist(above)[: self._settings.max_evidence]}
@@ -192,6 +233,14 @@ class Investigator:
                 gap="",
             )
         ]
+        yield Step(
+            kind="search",
+            headline=f"Searched, reranked and kept {len(admitted)} of {len(reranked)} passages",
+            detail=tuple(
+                f"{e.label} · {e.doc_id} · relevance {e.rerank_score:.2f}" for e in admitted
+            )
+            or ("Nothing cleared the relevance threshold.",),
+        )
 
     def _shortlist(
         self, ranked: Sequence[ScoredChunk], already_used: Sequence[Chunk] = ()
@@ -218,7 +267,7 @@ class Investigator:
             picked.append(scored)
         return picked
 
-    def _agentic(self, investigation: Investigation) -> None:
+    def _agentic(self, investigation: Investigation) -> Iterator[Step]:
         from detective.core.models import RoundResult
 
         question = investigation.question
@@ -228,8 +277,18 @@ class Investigator:
         for round_index in range(1, self._settings.max_rounds + 1):
             query, reason = self._plan(question, tried, investigation.evidence, gap)
             tried.append(query)
+            yield Step(
+                kind="plan",
+                headline=f"Round {round_index} — searching: “{query}”",
+                detail=(reason,),
+            )
 
             reranked = self.rerank(question, self.hybrid_search(query, self._settings.candidates))
+            yield Step(
+                kind="search",
+                headline=f"Reranked {len(reranked)} passages against the question",
+                detail=tuple(f"{s.chunk.chunk_id} · {s.score:.2f}" for s in reranked[:5]),
+            )
             seen = {e.chunk.chunk_id for e in investigation.evidence}
             fresh = self._shortlist(
                 [
@@ -286,6 +345,17 @@ class Investigator:
                     sufficient=sufficient,
                     gap=gap,
                 )
+            )
+            yield Step(
+                kind="verdict",
+                headline=(
+                    f"Admitted {len(admitted)}, rejected {len(ruled_out)} — "
+                    + ("evidence is sufficient" if sufficient else f"still missing: {gap}")
+                ),
+                detail=tuple(
+                    [f"ADMIT {e.label} ({e.doc_id}) — {e.rationale}" for e in admitted]
+                    + [f"REJECT {cid} ({score:.2f}) — {why}" for cid, score, why in ruled_out]
+                ),
             )
             if sufficient:
                 break
