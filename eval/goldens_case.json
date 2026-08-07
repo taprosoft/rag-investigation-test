@@ -1,0 +1,36 @@
+{
+  "corpus": "data",
+  "description": "Labelled queries over the supplied case archive. Relevance labels are read off the files themselves: case_4, case_6 and case_8 each state in their own text that they have no connection to the theft, and case_7 describes a post-hoc extortion attempt rather than the theft or the laundering. They are listed as distractors for exactly the questions whose vocabulary they share.",
+  "queries": [
+    {
+      "question": "How did the hacker launder the stolen funds?",
+      "relevant": ["case_5", "case_2"],
+      "distractors": ["case_4", "case_6", "case_8"]
+    },
+    {
+      "question": "How did the attacker first gain access?",
+      "relevant": ["case_1", "case_3"],
+      "distractors": ["case_6", "case_8", "case_4"]
+    },
+    {
+      "question": "What evidence points to where the money ended up?",
+      "relevant": ["case_5", "case_2"],
+      "distractors": ["case_7", "case_8"]
+    },
+    {
+      "question": "Was the exchange targeted before the theft itself?",
+      "relevant": ["case_3"],
+      "distractors": ["case_4", "case_6", "case_8"]
+    },
+    {
+      "question": "Did the attacker try to extort the exchange after the theft?",
+      "relevant": ["case_7"],
+      "distractors": ["case_8", "case_6"]
+    },
+    {
+      "question": "What techniques were used to obscure the trail?",
+      "relevant": ["case_5", "case_2"],
+      "distractors": ["case_6", "case_4"]
+    }
+  ]
+}

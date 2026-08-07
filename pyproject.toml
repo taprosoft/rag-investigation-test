@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "detective"
+version = "0.1.0"
+description = "RAG system that turns a corpus of case files into a cited investigation report."
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.34",
+    "cohere>=5.13",
+    "gradio>=6.0",
+    "numpy>=1.26",
+    "openai>=1.60",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "boto3-stubs[s3]>=1.34",
+    "mypy>=1.11",
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+detective = "detective.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+extend-exclude = ["env", ".venv", ".trash"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test helpers legitimately take loosely-typed fixture payloads.
+"tests/*" = ["ANN401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["detective"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+mypy_path = ["src", "tests"]
+exclude = ["^env/", "^\\.trash/"]
+
+[[tool.mypy.overrides]]
+# Neither ships type information we can rely on; both are wrapped in thin adapters.
+module = ["gradio.*", "cohere.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = ["integration: hits live APIs; skipped unless API keys are set"]

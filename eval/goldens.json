@@ -1,0 +1,31 @@
+{
+  "corpus": "eval/synthetic",
+  "description": "Synthetic validation set. The corpus is fictional and self-contained so retrieval quality can be measured deterministically in CI with no API keys. Distractors are deliberately written to share vocabulary with the questions; three of them state their own irrelevance, which is the failure mode a bi-encoder cannot see and a cross-encoder can.",
+  "queries": [
+    {
+      "question": "How did the intruder get into the facility?",
+      "relevant": ["syn_01_badge_access", "syn_10_guard_statement", "syn_02_camera_outage"],
+      "distractors": ["syn_06_fire_drill", "syn_05_parking_memo", "syn_07_software_patch"]
+    },
+    {
+      "question": "Where did the goods go after they left the building?",
+      "relevant": ["syn_03_manifest_split", "syn_04_secondary_market"],
+      "distractors": ["syn_09_vendor_audit", "syn_07_software_patch"]
+    },
+    {
+      "question": "What did the offender do to avoid being detected?",
+      "relevant": ["syn_02_camera_outage", "syn_03_manifest_split", "syn_04_secondary_market"],
+      "distractors": ["syn_06_fire_drill", "syn_07_software_patch"]
+    },
+    {
+      "question": "Was any demand for payment made after the loss?",
+      "relevant": ["syn_08_anonymous_demand"],
+      "distractors": ["syn_09_vendor_audit", "syn_05_parking_memo"]
+    },
+    {
+      "question": "Which security systems failed on the night of the incident?",
+      "relevant": ["syn_02_camera_outage", "syn_01_badge_access"],
+      "distractors": ["syn_07_software_patch", "syn_06_fire_drill"]
+    }
+  ]
+}

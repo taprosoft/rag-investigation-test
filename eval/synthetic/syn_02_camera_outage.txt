@@ -1,0 +1,5 @@
+Camera 4, which covers the loading dock apron, stopped recording at 02:03 and resumed at 02:47. The outage was logged as a network fault by the monitoring service.
+
+Engineers later found that the camera's power-over-ethernet port had been manually disabled at the switch rather than failing on its own. The switch cabinet is inside the building and requires a badge to reach.
+
+No other camera on the same switch lost coverage during that window.

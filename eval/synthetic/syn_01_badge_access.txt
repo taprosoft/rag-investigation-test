@@ -1,0 +1,5 @@
+The badge management system recorded a contractor credential being used at the loading dock door at 02:14, well outside any scheduled shift. The credential belonged to a maintenance contractor whose engagement had ended the previous quarter.
+
+The same credential was presented three times in under a minute before the door released, which is consistent with an unfamiliar user working out which reader to use.
+
+No corresponding entry appears in the visitor book for that night.

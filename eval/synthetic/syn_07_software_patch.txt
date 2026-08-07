@@ -1,0 +1,5 @@
+The warehouse management software vendor disclosed a vulnerability in its stock adjustment module and shipped a patch the same week.
+
+The site applied the patch within its normal maintenance window. Log review found no attempt to exploit the vulnerability before or after it was disclosed, and stock adjustment records for the period are intact.
+
+There is no evidence connecting this vulnerability to the missing consignment.
