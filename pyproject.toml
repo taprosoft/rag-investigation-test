@@ -55,8 +55,13 @@ exclude = ["^env/", "^\\.trash/"]
 
 [[tool.mypy.overrides]]
 # Neither ships type information we can rely on; both are wrapped in thin adapters.
+# `follow_imports = skip` matters for gradio specifically: its event listeners (.click,
+# .submit) are attached dynamically at class-creation time, so a type checker sees them on
+# some versions and not others. Without this, the build passes or fails depending on which
+# gradio the runner resolved, which is worse than no signal at all.
 module = ["gradio.*", "cohere.*"]
 ignore_missing_imports = true
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
